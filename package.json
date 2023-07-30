@@ -1,0 +1,27 @@
+{
+  "name": "cosmic-js",
+  "module": "index.ts",
+  "type": "module",
+  "devDependencies": {
+    "bun-types": "latest",
+    "ts-node": "^10.9.1",
+    "ts-patch": "^3.0.2",
+    "typescript": "^5.1.6"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@elysiajs/swagger": "^0.5.2",
+    "@xstate/test": "^0.5.1",
+    "effect": "^2.0.0-next.22",
+    "elysia": "^0.5.25",
+    "fastify": "^4.21.0",
+    "hono": "^3.3.4",
+    "typia": "^4.1.8"
+  },
+  "scripts": {
+    "prepare": "ts-patch install",
+    "typia:gen": "bun typia generate --input typia --output src/typia --project tsconfig.json"
+  }
+}
