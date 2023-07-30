@@ -1,6 +1,6 @@
 import type { OrderLine } from "../domain/Batch";
 import typia from 'typia';
-export const parseOrderLine = (text: string) => ((input: string): typia.Primitive<OrderLine> => { const assert = (input: any): OrderLine => {
+export const parseOrderLine = (text: unknown) => ((input: string): typia.Primitive<OrderLine> => { const assert = (input: any): OrderLine => {
     const __is = (input: any): input is OrderLine => {
         return "object" === typeof input && null !== input && ("string" === typeof (input as any).orderId && "string" === typeof (input as any).sku && "number" === typeof (input as any).quantity);
     };

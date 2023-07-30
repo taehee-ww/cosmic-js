@@ -1,7 +1,7 @@
 import { Context, Hono } from 'hono';
 import { allocate } from '../../domain/allocations';
 import * as Batch from '../../domain/Batch';
-import { parseOrderLine } from '../../../generated';
+import { parseOrderLine } from '../../typia';
 
 const batchRouter = new Hono()
 
