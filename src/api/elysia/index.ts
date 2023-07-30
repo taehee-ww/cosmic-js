@@ -5,7 +5,7 @@ import swagger from '@elysiajs/swagger'
 const app = new Elysia()
 	.use(swagger())
 	.get('/', () => 'Hello Elysia')
-	.group('/batches', createBatchGroup)
+	.group('/batch', createBatchGroup)
 	.listen(8080)
 
 
