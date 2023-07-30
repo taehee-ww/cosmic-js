@@ -1,7 +1,7 @@
 import { allocate } from '../../domain/allocations';
 import * as Batch from '../../domain/Batch';
 import { parseOrderLine } from '../../typia';
-import { FastifyInstance } from 'fastify';
+import { FastifyInstance, FastifyReply } from 'fastify';
 
 
 let batchList: Batch.T[] = [{
@@ -17,13 +17,14 @@ export default function (fastify: FastifyInstance, _options: unknown, done: () =
         return { batchList }
     })
     
-    fastify.post('/allocate', async (request) => {
-        const line = parseOrderLine(request.body);
+    fastify.post('/allocate', async (request, reply) => {
+        const line = parseOrderLine(request.body as string);
     
         const allocatedBatch = allocate(line, batchList)
         
         batchList = batchList.map(batch => batch.id === allocatedBatch.id ? allocatedBatch : batch);
     
+        reply.status(201)
         return { batchId: allocatedBatch.id }
     })
     done()
