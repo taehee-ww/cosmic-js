@@ -1,31 +1,39 @@
 import { Context, Hono } from 'hono';
-import { allocate } from '../../domain/allocations';
 import * as Batch from '../../domain/Batch';
-import { parseOrderLine } from '../../typia';
+import { parseBatch, parseOrderLine } from '../../typia';
+import FakeBatchUnitOfWork from '../../persistence/FakeBatchUnitOfWork';
+import FakeBatchRepo from '../../persistence/FakeBatchRepo';
+import { allocate } from '../../service/BatchServices';
 
 const batchRouter = new Hono()
 
-let batchList: Batch.T[] = [{
-	id: 'batch-001',
-	sku: 'SMALL-TABLE',
-	quantity: 10,
-	allocations: [],
-	eta: null
-}]
+const repo = FakeBatchRepo()
 
 batchRouter.get('/', async () => {
+	const batchList = await repo.list();
 	return Response.json({ batchList }, 200)
+})
+
+batchRouter.post('/', async (c) => {
+	const text = await c.req.text();
+	const batch = parseBatch(text);
+
+	await repo.add({
+		...batch,
+		eta: batch.eta !== null ? new Date(batch.eta) : null
+	})
+	
+	return Response.json({ batchId: batch.id }, 201)
 })
 
 batchRouter.post('/allocate', async (c) => {
 	const text = await c.req.text();
 	const line = parseOrderLine(text);
 
-	const allocatedBatch = allocate(line, batchList)
+	const uow = FakeBatchUnitOfWork(repo)
+	const batchId = await allocate(line, uow);
 	
-	batchList = batchList.map(batch => batch.id === allocatedBatch.id ? allocatedBatch : batch);
-
-	return Response.json({ batchId: allocatedBatch.id }, 201)
+	return Response.json({ batchId }, 201)
 })
 
 export default batchRouter;
