@@ -1,16 +1,17 @@
 import { Database } from "bun:sqlite";
 import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
+import { drizzle } from 'drizzle-orm/bun-sqlite';
+import { eq, placeholder, relations } from 'drizzle-orm';
  
 import * as Batch from '../domain/Batch';
 import { BatchRepo } from './types';
-import { drizzle } from 'drizzle-orm/bun-sqlite';
-import { eq, placeholder, relations } from 'drizzle-orm';
+import { assertBatch } from '../typia';
 
 const batches = sqliteTable('batches', {
     id: text('id').primaryKey(),
     sku: text('sku').notNull(),
     quantity: integer('quantity').notNull(),
-    eta: integer('eta', { mode: 'timestamp_ms' })
+    eta: integer('eta')
 })
 
 const allocations = relations(batches, ({ many }) => ({
@@ -21,12 +22,12 @@ const orderLines = sqliteTable('order_lines', {
     orderId: text('order_id').primaryKey(),
     sku: text('sku').notNull(),
     quantity: integer('quantity').notNull(),    
-    batchId: text('batch_id').notNull().references(() => batches.id),
+    batchId: text('batch_id').references(() => batches.id),
 })
 
 const allocated = relations(orderLines, ({ one }) => ({
 	allocated: one(batches, {
-		fields: [orderLines.orderId],
+		fields: [orderLines.batchId],
 		references: [batches.id],
 	}),
 }));
@@ -40,7 +41,7 @@ function DrizzleSqliteBatchRepo(bunDb: Database): BatchRepo {
         sku: placeholder('sku'),
         quantity: placeholder('quantity'),
         eta: placeholder('eta'),
-    })
+    }).prepare()
     const preparedInsertOrderLine = db.insert(orderLines).values({
         orderId: placeholder('orderId'),
         sku: placeholder('sku'),
@@ -49,14 +50,22 @@ function DrizzleSqliteBatchRepo(bunDb: Database): BatchRepo {
     }).prepare()
     const preparedAll = db.query.batches.prepareFindMany({
         with: {
-            allocations: true
+            allocations: {
+                columns: {
+                    batchId: false
+                }
+            }
         }
     });
-    const preparedGet = db.query.batches.prepareFindFirst({
+    const preparedGet = db.query.batches.prepareFindMany({
         with: {
-            allocations: true
+            allocations: {
+                columns: {
+                    batchId: false
+                }
+            }
         },
-        where: eq(batches.id, placeholder('batchId'))
+        where: eq(batches.id, placeholder('batchId')),
     });
 
     return {
@@ -70,14 +79,14 @@ function DrizzleSqliteBatchRepo(bunDb: Database): BatchRepo {
             }
         },
         async get(batchId: string) {
-            const batch = preparedGet.execute({ batchId })
+            const batch = preparedGet.execute({ batchId }).at(0)
             if (batch === undefined){
                 throw Error('does not exist')
             }
-            return batch;
+            return assertBatch(batch);
         },
         async list(){
-          return preparedAll.execute();
+          return preparedAll.execute().map(assertBatch);
         }
     }    
 }

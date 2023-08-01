@@ -2,6 +2,7 @@ import { Database } from "bun:sqlite";
 
 import * as Batch from '../domain/Batch';
 import { BatchRepo } from './types';
+import { assertBatch } from '../typia';
 
 function groupBy<Item>(array: Item[], by: (item: Item) => string | number): Map<string | number, Item[]> {
     const result = new Map();
@@ -26,7 +27,7 @@ function BunSqliteBatchRepo(db: Database): BatchRepo {
            $id: batch.id,
             $sku: batch.sku,
             $quantity: batch.quantity,
-            $eta: batch.eta ? batch.eta.valueOf() : null
+            $eta: batch.eta ? batch.eta : null
         })
         for (const line of batch.allocations) insertOrderLine.run({ $orderId: line.orderId, $sku: line.sku, $quantity: line.quantity, $batch_id: batch.id });
     });
@@ -45,14 +46,14 @@ function BunSqliteBatchRepo(db: Database): BatchRepo {
                 id: batchId,
                 sku: first.sku,
                 quantity: first.quantity,
-	            eta: first.eta ? new Date(first.eta) : null,
+	            eta: first.eta ? first.eta : null,
 	            allocations: rows.map(item => ({
                     orderId: item.order_id,
                     sku: first.sku,
                     quantity: item.line_quantity
                 }))
             }
-            return batch as Batch.T;
+            return assertBatch(batch);
         },
         async list(){
             const result = allQuery.all() as any[];
@@ -64,7 +65,7 @@ function BunSqliteBatchRepo(db: Database): BatchRepo {
                     id: first.batch_id,
                     sku: first.sku,
                     quantity: first.quantity,
-                    eta: first.eta ? new Date(first.eta) : null,
+                    eta: first.eta ? first.eta : null,
                     allocations: rows.map(item => ({
                         orderId: item.order_id,
                         sku: first.sku,

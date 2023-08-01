@@ -15,7 +15,7 @@ it('이미 도착한 묶음을 더 선호한다.', async () => {
 		sku: 'SMALL-TABLE',
 		quantity: 10,
 		allocations: [],
-		eta: new Date(2024, 8 - 1, 1)
+		eta: new Date(2024, 8 - 1, 1).valueOf()
 	}
 	const line = {
 		orderId: 'order-ref',

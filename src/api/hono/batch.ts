@@ -1,5 +1,4 @@
 import { Context, Hono } from 'hono';
-import * as Batch from '../../domain/Batch';
 import { parseBatch, parseOrderLine } from '../../typia';
 import FakeBatchUnitOfWork from '../../persistence/FakeBatchUnitOfWork';
 import FakeBatchRepo from '../../persistence/FakeBatchRepo';
@@ -18,10 +17,7 @@ batchRouter.post('/', async (c) => {
 	const text = await c.req.text();
 	const batch = parseBatch(text);
 
-	await repo.add({
-		...batch,
-		eta: batch.eta !== null ? new Date(batch.eta) : null
-	})
+	await repo.add(batch)
 	
 	return Response.json({ batchId: batch.id }, 201)
 })

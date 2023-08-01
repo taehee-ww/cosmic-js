@@ -5,7 +5,7 @@ export type T = {
 	id: string,
 	sku: string,
 	quantity: number,
-	eta: Date | null, // null이면 이미 도착한 상품
+	eta: number | null, // null이면 이미 도착한 상품
 	allocations: OrderLine[]
 }
 
@@ -54,13 +54,7 @@ export function canAllocate(batch: T, line: OrderLine): 'invalid-sku' | 'already
 	return 'ok';
 }
 
-export function allocate(batch: T, line: OrderLine):  {
-    allocations: OrderLine[];
-    id: string;
-    sku: string;
-    quantity: number;
-    eta: Date | null;
-}{
+export function allocate(batch: T, line: OrderLine): T {
 	const status = canAllocate(batch, line) ;
 	if (status !== 'ok'){
 		throw Error(status)

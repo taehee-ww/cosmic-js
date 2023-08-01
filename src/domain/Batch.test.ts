@@ -7,7 +7,7 @@ function setupBatchAndLine(sku: string, batchQuantity: number, lineQuantity: num
 		sku,
 		quantity: batchQuantity,
 		allocations: [],
-		eta: new Date()
+		eta: new Date().valueOf()
 	}
 	const line: Batch.OrderLine = {
 		orderId: 'order-ref',
@@ -67,7 +67,7 @@ describe('canAllocate', () => {
 			sku: 'SMALL-TABLE',
 			quantity: 10,
 			allocations: [],
-			eta: new Date()
+			eta: new Date().valueOf()
 		}, {
 			orderId: 'order-ref',
 			sku: 'BIG-TOASTER',
@@ -84,7 +84,7 @@ it('할당하지 않은 주문 품목은 취소할 수 없다', () => {
 		sku: 'SMALL-TABLE',
 		quantity: 10,
 		allocations: [],
-		eta: new Date()
+		eta: new Date().valueOf()
 	}, {
 		orderId: 'order-ref',
 		sku: 'BIG-TOASTER',
