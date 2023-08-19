@@ -34,8 +34,7 @@ const allocated = relations(orderLines, ({ one }) => ({
 
 function DrizzleSqliteBatchRepo(bunDb: Database): BatchRepo {
     const db = drizzle(bunDb, {
-        schema: { batches, allocations, orderLines, allocated },
-        logger: true
+        schema: { batches, allocations, orderLines, allocated }
     });
     const preparedInsertBatch = db.insert(batches).values({
         id: placeholder('id'),

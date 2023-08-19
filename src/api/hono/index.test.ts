@@ -3,7 +3,7 @@ import { it, expect } from 'bun:test';
 import app from '.';
 import { BATCH, ORDER_LINE } from '../../domain/fixtures';
 
-it('시나리오', async () => {
+it('hono 시나리오', async () => {
     const before = await app.request('/batches').then(res => res.json());
 
     expect(before).toStrictEqual({
@@ -26,6 +26,8 @@ it('시나리오', async () => {
         body: JSON.stringify(ORDER_LINE)
     }).then(res => res.json());
 
+    const batch = await app.request('/batches/allocations/'+ORDER_LINE.orderId).then(res => res.json());
+
     const final = await app.request('/batches').then(res => res.json());
 
     expect(final).toStrictEqual({
@@ -35,4 +37,10 @@ it('시나리오', async () => {
         }]
     })
 
+    expect(batch).toStrictEqual({
+        batch: {
+            ...BATCH,
+            allocations: [ORDER_LINE],
+        }
+    })
 })

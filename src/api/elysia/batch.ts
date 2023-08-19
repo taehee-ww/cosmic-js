@@ -1,28 +1,52 @@
 import { Elysia, t } from 'elysia';
-import { allocate } from '../../domain/allocations';
-import * as Batch from '../../domain/Batch';
-import { parseOrderLine } from '../../typia';
+import FakeBatchUnitOfWork from '../../persistence/FakeBatchUnitOfWork';
+import * as batchServices from '../../service/BatchServices';
+import FakeBatchRepo from '../../persistence/FakeBatchRepo';
+import { batchDto, orderLineDto } from '../../schema/typebox/batch';
 
-let batchList: Batch.T[] = [{
-	id: 'batch-001',
-	sku: 'SMALL-TABLE',
-	quantity: 10,
-	allocations: [],
-	eta: null
-}]
+const repo = FakeBatchRepo()
 
-const createBatchGroup = (app: Elysia) => 
-	app.get('/', async () => {
-		return batchList
+
+const createBatchGroup = (app: Elysia) =>
+	app.get('', async () => {
+		const batchList = await repo.list();
+		return { batchList }
+	}, {
+		response: t.Object({
+			batchList: t.Array(batchDto)
+		})
 	})
-	.post('/allocate', async ({ body }) => {
-		const line = parseOrderLine(body as string)
+		.post('', async ({ body }) => {
+			const batch = body
 
-		const allocatedBatch = allocate(line, batchList)
+			await repo.add(batch)
 
-		batchList = batchList.map(batch => batch.id === allocatedBatch.id ? allocatedBatch : batch);
+			return { batchId: batch.id }
+		}, {
+			body: batchDto,
+			response: t.Object({
+				batchId: batchDto.properties.id
+			})
+		})
+		.post('/allocate', async ({ body }) => {
+			const line = body;
 
-		return { batchId: allocatedBatch.id }
-	})
+			const uow = FakeBatchUnitOfWork(repo)
+			const batchId = await batchServices.allocate(line, uow);
+
+			return { batchId }
+		}, {
+			body: orderLineDto,
+			response: t.Object({
+				batchId: batchDto.properties.id
+			})
+		})
+		.get('/allocations/:orderId', async ({ params: { orderId } }) => {
+			const batch = await repo.findBatchForOrderLine(orderId);
+			return { batch }
+		}, {
+			params: t.Object({ orderId: t.String() }),
+			response: t.Object({ batch: batchDto })
+		})
 
 export default createBatchGroup;

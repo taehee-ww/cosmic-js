@@ -23,21 +23,6 @@ app.openapi(getRoute('/batches', {
 	return c.jsonT({ batchList })
 })
 
-app.openapi(getRoute('/orderLine/:orderId', {
-	params: z.object({
-		orderId: z.string()
-	}),
-	res: z.object({
-		batch: batchSchema
-	}, {
-		description: '해당 주문이 할당된 Batch'
-	})
-}), async (c) => {
-	const { orderId } = c.req.param()
-	const batch = await repo.findBatchForOrderLine(orderId);
-	return c.jsonT({ batch })
-})
-
 app.openapi(postRoute('/batches', {
 	req: batchSchema,
 	res: z.object({
@@ -64,12 +49,27 @@ app.openapi(postRoute('/batches/allocate', {
 	return c.jsonT({ batchId })
 })
 
+app.openapi(getRoute('/batches/allocations/:orderId', {
+	params: z.object({
+		orderId: z.string()
+	}),
+	res: z.object({
+		batch: batchSchema
+	}, {
+		description: '해당 주문이 할당된 Batch'
+	})
+}), async (c) => {
+	const { orderId } = c.req.valid('param')
+	const batch = await repo.findBatchForOrderLine(orderId);
+	return c.jsonT({ batch })
+})
+
 app.onError((error, c) => {
 	if (error instanceof Error) {
-		return Response.json({ error: error.message }, { status: 400 })
+		return c.json({ error: error.message })
 	}
 
-	return Response.json({ error: '알 수 없는 에러' }, { status: 400 })
+	return c.json({ error: '알 수 없는 에러' })
 })
 
 app.doc('/openapi.json', {
