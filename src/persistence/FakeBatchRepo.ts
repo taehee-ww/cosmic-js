@@ -26,6 +26,13 @@ function FakeBatchRepo(): BatchRepo {
             }
             return batch;
         },
+        async findBatchForOrderLine(orderId: string) {
+            const batch = _batches.find(item => item.allocations.some(allocation => allocation.orderId === orderId));
+            if (batch === undefined){
+                throw Error('does not exist')
+            }
+            return batch;
+        },
         async list(){
             return _batches;
         }

@@ -22,6 +22,11 @@ function testRepo(name: string, setup: () => Promise<BatchRepo>) {
             ...BATCH,
             allocations: [ORDER_LINE]
         });
+
+        expect(await repo.findBatchForOrderLine(ORDER_LINE.orderId)).toStrictEqual({
+            ...BATCH,
+            allocations: [ORDER_LINE]
+        });
     })
 }
 

@@ -1,7 +1,7 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
 import FakeBatchUnitOfWork from '../../persistence/FakeBatchUnitOfWork';
 import FakeBatchRepo from '../../persistence/FakeBatchRepo';
-import { allocate } from '../../service/BatchServices';
+import * as batchServices from '../../service/BatchServices';
 import { batchSchema, orderLineSchema } from '../../schema/zod/batch';
 import { logger } from 'hono/logger'
 import { prettyJSON } from 'hono/pretty-json'
@@ -21,6 +21,21 @@ app.openapi(getRoute('/batches', {
 }), async (c) => {
 	const batchList = await repo.list();
 	return c.jsonT({ batchList })
+})
+
+app.openapi(getRoute('/orderLine/:orderId', {
+	params: z.object({
+		orderId: z.string()
+	}),
+	res: z.object({
+		batch: batchSchema
+	}, {
+		description: '해당 주문이 할당된 Batch'
+	})
+}), async (c) => {
+	const { orderId } = c.req.param()
+	const batch = await repo.findBatchForOrderLine(orderId);
+	return c.jsonT({ batch })
 })
 
 app.openapi(postRoute('/batches', {
@@ -44,7 +59,7 @@ app.openapi(postRoute('/batches/allocate', {
 	const line = c.req.valid('json')
 
 	const uow = FakeBatchUnitOfWork(repo)
-	const batchId = await allocate(line, uow);
+	const batchId = await batchServices.allocate(line, uow);
 
 	return c.jsonT({ batchId })
 })

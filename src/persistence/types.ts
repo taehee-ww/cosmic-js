@@ -2,7 +2,7 @@ import * as Batch from '../domain/Batch'
 
 export interface BatchRepo {
     add(batch: Batch.T): Promise<void>
-
+    findBatchForOrderLine(orderId: Batch.OrderLine['orderId']): Promise<Batch.T>
     get(id: Batch.T['id']): Promise<Batch.T>
     allocate(id: Batch.T['id'], orderLine: Batch.OrderLine): Promise<void>
 

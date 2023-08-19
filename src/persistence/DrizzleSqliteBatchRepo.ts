@@ -2,7 +2,7 @@ import { Database } from "bun:sqlite";
 import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
 import { drizzle } from 'drizzle-orm/bun-sqlite';
 import { eq, placeholder, relations } from 'drizzle-orm';
- 
+
 import * as Batch from '../domain/Batch';
 import { BatchRepo } from './types';
 import { assertBatch } from '../typia';
@@ -15,26 +15,27 @@ const batches = sqliteTable('batches', {
 })
 
 const allocations = relations(batches, ({ many }) => ({
-	allocations: many(orderLines),
+    allocations: many(orderLines),
 }));
 
 const orderLines = sqliteTable('order_lines', {
     orderId: text('order_id').primaryKey(),
     sku: text('sku').notNull(),
-    quantity: integer('quantity').notNull(),    
-    batchId: text('batch_id').references(() => batches.id),
+    quantity: integer('quantity').notNull(),
+    batchId: text('batch_id'),
 })
 
 const allocated = relations(orderLines, ({ one }) => ({
-	allocated: one(batches, {
-		fields: [orderLines.batchId],
-		references: [batches.id],
-	}),
+    allocated: one(batches, {
+        fields: [orderLines.batchId],
+        references: [batches.id],
+    }),
 }));
 
 function DrizzleSqliteBatchRepo(bunDb: Database): BatchRepo {
     const db = drizzle(bunDb, {
-        schema: {batches, allocations, orderLines, allocated}
+        schema: { batches, allocations, orderLines, allocated },
+        logger: true
     });
     const preparedInsertBatch = db.insert(batches).values({
         id: placeholder('id'),
@@ -67,11 +68,25 @@ function DrizzleSqliteBatchRepo(bunDb: Database): BatchRepo {
         },
         where: eq(batches.id, placeholder('batchId')),
     });
+    const preparedFindBatchForOrderLine = db.query.orderLines.prepareFindMany({
+        with: {
+            allocated: {
+                with: {
+                    allocations: {
+                        columns: {
+                            batchId: false
+                        }
+                    }
+                }
+            }
+        },
+        where: eq(orderLines.orderId, placeholder('orderId'))
+    });
 
     return {
-        async add(batch: Batch.T){
+        async add(batch: Batch.T) {
             preparedInsertBatch.run(batch)
-            for (const line of batch.allocations){
+            for (const line of batch.allocations) {
                 preparedInsertOrderLine.run({
                     ...line,
                     batchId: batch.id
@@ -86,15 +101,22 @@ function DrizzleSqliteBatchRepo(bunDb: Database): BatchRepo {
         },
         async get(batchId: string) {
             const batch = preparedGet.execute({ batchId }).at(0)
-            if (batch === undefined){
+            if (batch === undefined) {
                 throw Error('does not exist')
             }
             return assertBatch(batch);
         },
-        async list(){
-          return preparedAll.execute().map(assertBatch);
+        async findBatchForOrderLine(orderId: string) {
+            const line = preparedFindBatchForOrderLine.execute({ orderId }).at(0) as { allocated?: unknown } || null
+            if (typeof line !== 'object' || !line.allocated) {
+                throw Error('does not exist')
+            }
+            return assertBatch(line.allocated);
+        },
+        async list() {
+            return preparedAll.execute().map(assertBatch);
         }
-    }    
+    }
 }
 
 export default DrizzleSqliteBatchRepo;

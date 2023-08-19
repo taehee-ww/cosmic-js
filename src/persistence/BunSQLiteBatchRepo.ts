@@ -19,6 +19,7 @@ function groupBy<Item>(array: Item[], by: (item: Item) => string | number): Map<
 
 function BunSqliteBatchRepo(db: Database): BatchRepo {
     const getQuery = db.query('SELECT b.id as batch_id, b.sku as sku, b.quantity, b.eta, o.order_id as order_id, o.quantity as line_quantity FROM batches as b LEFT JOIN order_lines as o ON o.batch_id = b.id WHERE id = $batchId ')
+    const findBatchForOrderLineQuery = db.query('SELECT b.id as batch_id, b.sku as sku, b.quantity, b.eta, o.order_id as order_id, o.quantity as line_quantity FROM batches as b LEFT JOIN order_lines as o ON o.batch_id = b.id WHERE o.order_id = $orderId ')
     const allQuery = db.query('SELECT b.id as batch_id, b.sku as sku, b.quantity, b.eta, o.order_id as order_id, o.quantity as line_quantity FROM batches as b LEFT JOIN order_lines as o ON o.batch_id = b.id')
     const insertBatch = db.query('INSERT INTO batches (id, sku, quantity, eta) VALUES ($id, $sku, $quantity, $eta)')
     const insertOrderLine = db.query('INSERT INTO order_lines (order_id, sku, quantity, batch_id) VALUES ($order_id, $sku, $quantity, $batch_id)')
@@ -49,6 +50,26 @@ function BunSqliteBatchRepo(db: Database): BatchRepo {
             const first = rows[0];
             const batch = {
                 id: batchId,
+                sku: first.sku,
+                quantity: first.quantity,
+                eta: first.eta ? first.eta : null,
+                allocations: rows.filter(item => item.order_id !== null).map(item => ({
+                    orderId: item.order_id,
+                    sku: first.sku,
+                    quantity: item.line_quantity
+                }))
+            }
+            return assertBatch(batch);
+        },
+        async findBatchForOrderLine(orderId: string) {
+            const rows = findBatchForOrderLineQuery.all({ $orderId: orderId }) as any[];
+            if (rows.length === 0) {
+                throw Error('does not exist')
+            }
+
+            const first = rows[0];
+            const batch = {
+                id: first.batch_id,
                 sku: first.sku,
                 quantity: first.quantity,
                 eta: first.eta ? first.eta : null,
