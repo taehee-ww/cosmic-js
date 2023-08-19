@@ -5,47 +5,29 @@ import { allocate } from '../../service/BatchServices';
 import { batchSchema, orderLineSchema } from '../../schema/zod/batch';
 import { logger } from 'hono/logger'
 import { prettyJSON } from 'hono/pretty-json'
-import { ZodSchema } from 'zod';
+import { getRoute, postRoute } from './openapiUtils';
 
 const app = new OpenAPIHono()
 
-app.use('*', logger())
+// app.use('*', logger())
 const repo = FakeBatchRepo()
 
-const jsonBody = <SchemaT extends ZodSchema>(schema: SchemaT, description: string) => ({
-	content: {
-		'application/json': {
-			schema
-		},
-	},
-	description,
-})
-
-app.openapi(createRoute({
-	method: 'get',
-	path: '/batches',
-	request: {},
-	responses: {
-		200: jsonBody(z.object({
-			batchList: z.array(batchSchema)
-		}), 'Get all Batch list'),
-	},
+app.openapi(getRoute('/batches', {
+	res: z.object({
+		batchList: z.array(batchSchema)
+	}, {
+		description: '모든 Batch 목록'
+	})
 }), async (c) => {
 	const batchList = await repo.list();
 	return c.jsonT({ batchList })
 })
 
-app.openapi(createRoute({
-	method: 'post',
-	path: '/batches',
-	request: {
-		body: jsonBody(batchSchema, 'Batch')
-	},
-	responses: {
-		201: jsonBody(z.object({
-			batchId: batchSchema.shape.id
-		}), 'insert Batch'),
-	},
+app.openapi(postRoute('/batches', {
+	req: batchSchema,
+	res: z.object({
+		batchId: batchSchema.shape.id
+	}, { description: '추가된 Batch의 id '}),
 }), async (c) => {
 	const batch = c.req.valid('json')
 	await repo.add(batch)
@@ -53,17 +35,11 @@ app.openapi(createRoute({
 	return c.jsonT({ batchId: batch.id })
 })
 
-app.openapi(createRoute({
-	method: 'post',
-	path: '/batches/allocate',
-	request: {
-		body: jsonBody(orderLineSchema, 'orderLine to allocate')
-	},
-	responses: {
-		201: jsonBody(z.object({
-			batchId: batchSchema.shape.id
-		}), 'allocated batch id'),
-	},
+app.openapi(postRoute('/batches/allocate', {
+	req: orderLineSchema,
+	res: z.object({
+		batchId: batchSchema.shape.id
+	}, { description: 'orderLine을 할당한 Batch의 id '}),
 }), async (c) => {
 	const line = c.req.valid('json')
 

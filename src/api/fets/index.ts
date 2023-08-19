@@ -1,5 +1,6 @@
 import { createRouter, Response as FeResponse, useCORS } from 'fets'
 import { z } from 'zod'
+import { BATCH, ORDER_LINE } from '../../domain/fixtures'
 
 const router = createRouter({
   plugins: [
@@ -15,15 +16,8 @@ const router = createRouter({
           type: "object",
           examples: [
             {
-              id: 'batch-001',
-              sku: 'SMALL-TABLE',
-              quantity: 10,
-              allocations: [{
-                orderId: 'order-ref',
-                sku: 'SMALL-TABLE',
-                quantity: 2
-              }],
-              eta: new Date().valueOf()
+              ...BATCH,
+              allocations: [ORDER_LINE]
             }
           ],
           properties: {
@@ -59,11 +53,7 @@ const router = createRouter({
         OrderLine: {
           type: "object",
           examples: [
-            {
-              orderId: 'order-ref',
-              sku: 'SMALL-TABLE',
-              quantity: 2
-            }
+            ORDER_LINE
           ],
           properties: {
             orderId: { type: "string" },
@@ -96,15 +86,8 @@ const router = createRouter({
     }
   } as const,
   handler: () => FeResponse.json([{
-    id: 'batch-001',
-    sku: 'SMALL-TABLE',
-    quantity: 10,
-    allocations: [{
-      orderId: 'order-ref',
-      sku: 'SMALL-TABLE',
-      quantity: 2
-    }],
-    eta: new Date().valueOf()
+    ...BATCH,
+    allocations: [ORDER_LINE]
   }])
 })
   .route({
@@ -128,15 +111,8 @@ const router = createRouter({
       }
     } as const,
     handler: () => FeResponse.json({
-      id: 'batch-001',
-      sku: 'SMALL-TABLE',
-      quantity: 10,
-      allocations: [{
-        orderId: 'order-ref',
-        sku: 'SMALL-TABLE',
-        quantity: 2
-      }],
-      eta: new Date().valueOf()
+      ...BATCH,
+      allocations: [ORDER_LINE]
     })
   })
   .route({
