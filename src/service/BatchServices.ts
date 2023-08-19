@@ -13,6 +13,7 @@ export async function allocate(line: Batch.OrderLine, uow: BatchUnitOfWork) {
             throw Error('invalid sku')
         }
         const allocatedBatch = Allocation.allocate(line, batches)
+        uow.repo.allocate(allocatedBatch.id, line)
         await uow.commit()
         return allocatedBatch.id
     } catch (error) {

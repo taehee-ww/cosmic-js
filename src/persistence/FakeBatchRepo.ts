@@ -12,6 +12,13 @@ function FakeBatchRepo(): BatchRepo {
 
             _batches = [..._batches, batch]
         },
+        async allocate(batchId, line) {
+            const batch = _batches.find(item => item.id === batchId);
+            if (batch === undefined){
+                throw Error('does not exist')
+            }
+            batch.allocations.push(line)
+        },
         async get(batchId: string) {
             const batch = _batches.find(item => item.id === batchId);
             if (batch === undefined){

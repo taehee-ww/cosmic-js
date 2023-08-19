@@ -1,17 +1,14 @@
 import { z } from '@hono/zod-openapi'
+import { BATCH, ORDER_LINE } from '../../domain/fixtures';
 
 export const orderLineSchema = z.object({
     orderId: z.string(),
     sku: z.string(),
     quantity: z.number()
 })
-.openapi({
-    example:  {
-        orderId: 'order-ref',
-        sku: 'SMALL-TABLE',
-        quantity: 2
-      }
-});
+    .openapi({
+        example: ORDER_LINE
+    });
 
 export const batchSchema = z.object({
     id: z.string().openapi({ example: 'batch-001' }),
@@ -21,14 +18,9 @@ export const batchSchema = z.object({
     allocations: z.array(
         orderLineSchema
     )
-}).openapi({ example: {
-	id: 'batch-001',
-	sku: 'SMALL-TABLE',
-	quantity: 10,
-	allocations: [{
-        orderId: 'order-ref',
-        sku: 'SMALL-TABLE',
-        quantity: 2
-      }],
-	eta: null
-} })
+}).openapi({
+    example: {
+        ...BATCH,
+        allocations: [ORDER_LINE]
+    }
+})

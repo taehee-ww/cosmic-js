@@ -78,6 +78,12 @@ function DrizzleSqliteBatchRepo(bunDb: Database): BatchRepo {
                 })
             }
         },
+        async allocate(batchId, line) {
+            preparedInsertOrderLine.run({
+                ...line,
+                batchId
+            })
+        },
         async get(batchId: string) {
             const batch = preparedGet.execute({ batchId }).at(0)
             if (batch === undefined){

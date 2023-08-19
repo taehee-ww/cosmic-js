@@ -4,10 +4,12 @@ import * as Batch from '../../domain/Batch';
 import { BatchRepo } from '../types';
 import { assertBatch } from '../../typia';
 
-function BunSqliteBatchRepo(db: Database): BatchRepo {
+function EdgeDBBatchRepo(db: Database): BatchRepo {
 
     return {
         async add(batch: Batch.T){
+        },
+        async allocate(batchId, line) {
         },
         async get(batchId: string) {
             return assertBatch({})
@@ -18,4 +20,4 @@ function BunSqliteBatchRepo(db: Database): BatchRepo {
     }    
 }
 
-export default BunSqliteBatchRepo;
+export default EdgeDBBatchRepo;
