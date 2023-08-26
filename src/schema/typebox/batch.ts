@@ -1,4 +1,4 @@
-import { t } from 'elysia';
+import { Type as t } from '@sinclair/typebox';
 import { ORDER_LINE, BATCH } from '../../domain/fixtures';
 
 export const orderLineDto = t.Object({
