@@ -5,8 +5,8 @@ import { BATCH, ORDER_LINE } from '../../domain/fixtures';
 
 it('elysia 시나리오', async () => {
 
-    const fetchElysia = (path: string, init?: RequestInit) => app.handle(new Request('http://localhost:3000'+path, init)).then(res => {
-        if(!res.ok){
+    const fetchElysia = (path: string, init?: RequestInit) => app.handle(new Request('http://localhost:3000' + path, init)).then(res => {
+        if (!res.ok) {
             return res.text().then(value => Promise.reject(JSON.stringify({ code: res.status, error: value })))
         }
         return res.json();
@@ -19,7 +19,7 @@ it('elysia 시나리오', async () => {
             'Content-Type': 'application/json'
         }
     });
-    
+
     const before = await get('/batches');
 
     expect(before).toStrictEqual({
@@ -28,7 +28,7 @@ it('elysia 시나리오', async () => {
 
     await post('/batches', BATCH);
 
-    const after =  await get('/batches');
+    const after = await get('/batches');
 
     expect(after).toStrictEqual({
         batchList: [BATCH]
@@ -36,7 +36,7 @@ it('elysia 시나리오', async () => {
 
     await post('/batches/allocate', ORDER_LINE);
 
-    const batch = await get('/batches/allocations/'+ORDER_LINE.orderId);
+    const batch = await get('/batches/allocations/' + ORDER_LINE.orderId);
 
     expect(batch).toStrictEqual({
         batch: {

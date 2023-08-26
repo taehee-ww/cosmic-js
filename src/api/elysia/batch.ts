@@ -6,7 +6,6 @@ import { batchDto, orderLineDto } from '../../schema/typebox/batch';
 
 const repo = FakeBatchRepo()
 
-
 const createBatchGroup = (app: Elysia) =>
 	app.get('', async () => {
 		const batchList = await repo.list();
