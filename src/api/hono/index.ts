@@ -27,7 +27,7 @@ app.openapi(postRoute('/batches', {
 	req: batchSchema,
 	res: z.object({
 		batchId: batchSchema.shape.id
-	}, { description: '추가된 Batch의 id '}),
+	}, { description: '추가된 Batch의 id ' }),
 }), async (c) => {
 	const batch = c.req.valid('json')
 	await repo.add(batch)
@@ -39,7 +39,7 @@ app.openapi(postRoute('/batches/allocate', {
 	req: orderLineSchema,
 	res: z.object({
 		batchId: batchSchema.shape.id
-	}, { description: 'orderLine을 할당한 Batch의 id '}),
+	}, { description: 'orderLine을 할당한 Batch의 id ' }),
 }), async (c) => {
 	const line = c.req.valid('json')
 
@@ -53,11 +53,7 @@ app.openapi(getRoute('/batches/allocations/:orderId', {
 	params: z.object({
 		orderId: z.string()
 	}),
-	res: z.object({
-		batch: batchSchema
-	}, {
-		description: '해당 주문이 할당된 Batch'
-	})
+	res: z.object({ batch: batchSchema })
 }), async (c) => {
 	const { orderId } = c.req.valid('param')
 	const batch = await repo.findBatchForOrderLine(orderId);
