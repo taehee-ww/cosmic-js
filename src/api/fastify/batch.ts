@@ -1,31 +1,67 @@
-import { allocate } from '../../domain/allocations';
-import * as Batch from '../../domain/Batch';
-import { parseOrderLine } from '../../typia';
-import { FastifyInstance, FastifyReply } from 'fastify';
+import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
+import { Type as t } from '@sinclair/typebox';
 
+import * as batchServices from '../../service/BatchServices';
+import { FastifyBaseLogger, FastifyInstance, RawReplyDefaultExpression, RawRequestDefaultExpression, RawServerDefault } from 'fastify';
+import FakeBatchRepo from '../../persistence/FakeBatchRepo';
+import { batchDto, orderLineDto } from '../../schema/typebox/batch';
+import FakeBatchUnitOfWork from '../../persistence/FakeBatchUnitOfWork';
 
-let batchList: Batch.T[] = [{
-	id: 'batch-001',
-	sku: 'SMALL-TABLE',
-	quantity: 10,
-	allocations: [],
-	eta: null
-}]
+const repo = FakeBatchRepo()
 
-export default function (fastify: FastifyInstance, _options: unknown, done: () => void) {
-    fastify.get('/', async () => {
+type FastifyTypebox = FastifyInstance<
+    RawServerDefault,
+    RawRequestDefaultExpression<RawServerDefault>,
+    RawReplyDefaultExpression<RawServerDefault>,
+    FastifyBaseLogger,
+    TypeBoxTypeProvider
+>;
+export default function (fastify: FastifyTypebox, _options: unknown, done: () => void) {
+    fastify.get('/', {
+        schema: {
+            response: {
+                200: t.Object({
+                    batchList: t.Array(batchDto)
+                })
+            }
+        }
+    }, async () => {
+        const batchList = await repo.list();
         return { batchList }
     })
-    
-    fastify.post('/allocate', async (request, reply) => {
-        const line = parseOrderLine(request.body as string);
-    
-        const allocatedBatch = allocate(line, batchList)
-        
-        batchList = batchList.map(batch => batch.id === allocatedBatch.id ? allocatedBatch : batch);
-    
-        reply.status(201)
-        return { batchId: allocatedBatch.id }
+
+    fastify.post('/', {
+        schema: {
+            body: batchDto,
+            response: {
+                201: t.Object({
+                    batchId: t.String()
+                })
+            }
+        }
+    }, async (request, reply) => {
+        const batch = request.body;
+        await repo.add(batch);
+        return reply.code(201)
+            .send({ batchId: batch.id })
+    })
+
+    fastify.post('/allocate', {
+        schema: {
+            body: orderLineDto,
+            response: {
+                201: t.Object({
+                    batchId: t.String()
+                })
+            }
+        }
+    }, async (request, reply) => {
+        const line = request.body;
+
+        const uow = FakeBatchUnitOfWork(repo)
+        const batchId = await batchServices.allocate(line, uow);
+
+        return reply.code(201).send({ batchId: batchId })
     })
     done()
-  };
+};
